@@ -17,4 +17,8 @@ public interface Player {
     public List<Card> getHand();
 
     public void setHand(List<Card> hand);
+
+    public Card.Rank getSelectedRank();
+
+    public void setSelectedRank(String name);
 }

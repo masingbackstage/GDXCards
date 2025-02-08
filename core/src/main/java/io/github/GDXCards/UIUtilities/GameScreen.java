@@ -24,28 +24,33 @@ import io.github.GDXCards.GameUtilities.Player;
 import io.github.GDXCards.Network.GameInstance;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 public class GameScreen implements Screen {
     private final Stage stage;
     private final GameController gameController;
-    private final Player player;
+    private Player player;
     TextButton addToStackButton;
     TextButton checkStackButton;
     SelectBox<String> rankSelectBox;
     TextButton startGameButton;
-    GameInstance gameInstance;
     List<CardActor> cardActors;
-    List<CardActor> myCardActors;
+    List<CardActor> handCardActors;
+    List<CardActor> stackCardActors;
+    private boolean gameStartedChecked;
+
+
 
     public GameScreen(Stage stage, GameController gameController, Player player, GameInstance gameInstance) {
         this.stage = stage;
         this.gameController = gameController;
         this.player = player;
-        this.gameInstance = gameInstance;
-        cardActors = new ArrayList<>();
-        myCardActors = new ArrayList<>();
+        this.cardActors = new ArrayList<>();
+        this.handCardActors = new ArrayList<>();
+        this.stackCardActors = new ArrayList<>();
+        this.gameStartedChecked = false;
 
 
         Texture backgroundTexture = new Texture(Gdx.files.internal("ui/back_texture.png"));
@@ -56,16 +61,6 @@ public class GameScreen implements Screen {
         stage.addActor(background);
         initializeUI();
         initializeCards();
-    }
-
-    private void initializeCards() {
-        for (Card card : gameController.getDeck().getDeck()) {
-            cardActors.add(new CardActor(card));
-        }
-        for (int i = 0; i < cardActors.size(); i++) {
-            cardActors.get(i).setPosition(300 + i * 0.3f, 700 + i * 0.3f);
-            stage.addActor(cardActors.get(i));
-        }
     }
 
     private void initializeUI() {
@@ -84,8 +79,8 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 moveCardActorsToStack();
                 gameController.addToStack();
-                System.out.println(player.getHand().size());
-                moveCardActors();
+                updateGameState();
+                System.out.println("Player hand size is (screen): " + player.getHand().size());
             }
         });
 
@@ -97,8 +92,16 @@ public class GameScreen implements Screen {
         checkStackButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                gameController.checkStack();
-                moveCardActors();
+                if (gameController.getStack().getCardsFromStack().isEmpty()) return;
+                boolean result = gameController.checkStack();
+
+                if(result) {
+                    removeCardActorsFromStackToHand();
+                } else {
+                    removeCardActorsFromStackToDeck();
+                }
+
+                gameController.getGameInstance().sendStackCheckResult(result);
             }
         });
 
@@ -115,19 +118,49 @@ public class GameScreen implements Screen {
 
     }
 
+    private void initializeCards() {
+        for (int i = 0; i < gameController.getDeck().getDeck().size(); i++) {
+            Card card = gameController.getDeck().getDeck().get(i);
+            CardActor cardActor = new CardActor(card);
+            cardActors.add(cardActor);
+            cardActor.setPosition(stage.getWidth()/2 - 570 + i * 0.3f, stage.getHeight()/2 - 100 + i * 0.3f);
+            stage.addActor(cardActor);
+        }
+    }
+
     private SelectBox<String> getStringSelectBox(Skin skin) {
         Array<String> ranks = new Array<>();
+
+        for (Card.Rank rank : Card.Rank.values()) {
+            ranks.add(rank.name());
+        }
+
         SelectBox<String> rankSelectBox = new SelectBox<>(skin);
         rankSelectBox.setItems(ranks);
+
+        rankSelectBox.setSelected("N2");
+
         rankSelectBox.setSize(300, 100);
         rankSelectBox.setPosition(740, 20);
 
         rankSelectBox.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                player.setSelectedRank(rankSelectBox.getSelected());
             }
         });
         return rankSelectBox;
+    }
+
+    private void updateRankSelectBox() {
+        Array<String> ranks = new Array<>();
+        for (Card.Rank rank : Card.Rank.values()) {
+            if (rank.ordinal() <= gameController.getStack().getCurrentRank().ordinal()) {
+                ranks.add(rank.name());
+            }
+        }
+        rankSelectBox.setItems(ranks);
+        //rankSelectBox.setSelectedIndex(rankSelectBox.getItems().size - 1);
     }
 
     private TextButton getStartGameButton(Skin skin) {
@@ -140,11 +173,20 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 gameController.startGame();
                 startGameButton.remove();
-                findCardActors();
-                moveCardActors();
             }
         });
         return startGameButton;
+    }
+
+    public void updateGameState() {
+        System.out.println("Updating game screen state...");
+
+        addCardActorsToHand();
+        moveCardActorsToHand();
+        updateStackActors();
+        updateRankSelectBox();
+        System.out.println("HandCardActors size: " + handCardActors.size());
+
     }
 
     private void canUseButtons() {
@@ -187,37 +229,37 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void findCardActors() {
-        myCardActors.clear();
-        List<Card> myHand = player.getHand();
-
-        for (Card card : myHand) {
-            for (CardActor cardActor : cardActors) {
-                if (cardActor.getRank() == card.getRank() && cardActor.getSuit() == card.getSuit()) {
-                    myCardActors.add(cardActor);
-                    card.setClicked(cardActor.isClicked());
+    private void addCardActorsToHand() {
+        System.out.println("Player hand size: " + player.getHand().size());
+        Iterator<CardActor> iterator = cardActors.iterator();
+        while (iterator.hasNext()) {
+            CardActor cardActor = iterator.next();
+            for (Card card : player.getHand()) {
+                if (cardActor.contains(card)) {
+                    handCardActors.add(cardActor);
+                    iterator.remove();
                 }
             }
         }
-        cardActors.removeAll(myCardActors);
     }
 
-    private void moveCardActors() {
+    private void moveCardActorsToHand() {
         float spacing;
-        if (myCardActors.size() > 13) {
-            spacing = (float) (stage.getWidth() * 0.8 / myCardActors.size());
+        if (handCardActors.size() > 13) {
+            spacing = (float) (stage.getWidth() * 0.8 / handCardActors.size());
         } else {
             spacing = 130;
         }
 
-        float handWidth = spacing * (myCardActors.size() - 1) + 120;
+        float handWidth = spacing * (handCardActors.size() - 1) + 120;
         float startX = (stage.getWidth() - handWidth) / 2;
 
-        for (int i = 0; i < myCardActors.size(); i++) {
-            CardActor cardActor = myCardActors.get(i);
+        for (int i = 0; i < handCardActors.size(); i++) {
+            CardActor cardActor = handCardActors.get(i);
 
             if (!stage.getActors().contains(cardActor, true)) {
                 stage.addActor(cardActor);
+                System.out.println("Added card to stage: " + cardActor.getCard().getRank());
             }
 
             float targetX = startX + i * spacing;
@@ -231,27 +273,132 @@ public class GameScreen implements Screen {
     }
 
     private void moveCardActorsToStack() {
-        for (CardActor cardActor : myCardActors) {
-            if (cardActor.isClicked()) {
-                Random rand = new Random();
+        List <CardActor> selectedCardActors = new ArrayList<>();
+        Random rand = new Random();
 
-                if (cardActor.isFaceUp()) cardActor.flip();
-                if (!stage.getActors().contains(cardActor, true)) {
-                    stage.addActor(cardActor);
+        for (CardActor cardActor : handCardActors) {
+            if (cardActor.isClicked()) {
+                for (Card card : gameController.getCurrentPlayer().getHand()) {
+                    if (cardActor.contains(card)) {
+                        selectedCardActors.add(cardActor);
+                        card.setClicked(true);
+                    }
                 }
-                float targetX = 700 + 0.3f;
-                cardActor.addAction(
-                    Actions.sequence(
-                        Actions.moveTo(stage.getWidth()/2 - 60, cardActor.getY(), 0.2f, Interpolation.sine),
-                        Actions.parallel(
-                            Actions.moveTo(stage.getWidth()/2, stage.getHeight()/2, 0.2f, Interpolation.sine),
-                            Actions.moveTo(targetX, 700, 0.7f, Interpolation.sine),
-                            Actions.rotateBy(rand.nextFloat(-50, 50), 0.2f, Interpolation.sine)
-                        )
-                    )
-                );
             }
         }
+
+
+        handCardActors.removeAll(selectedCardActors);
+        stackCardActors.addAll(selectedCardActors);
+
+        for (int i = 0; i < selectedCardActors.size(); i++) {
+            if (selectedCardActors.get(i).isFaceUp()) selectedCardActors.get(i).flip();
+            float targetX = stage.getWidth() / 2 + 570 + (i) * 0.3f;
+            selectedCardActors.get(i).toFront();
+            selectedCardActors.get(i).addAction(
+                Actions.sequence(
+                    Actions.moveTo(stage.getWidth() / 2 - 60, selectedCardActors.get(i).getY(), 0.2f, Interpolation.sine),
+                    Actions.parallel(
+                        Actions.moveTo(stage.getWidth() / 2, stage.getHeight() / 2, 0.2f, Interpolation.sine),
+                        Actions.moveTo(targetX, stage.getHeight() / 2 - 100, 0.7f, Interpolation.sine),
+                        Actions.rotateBy(rand.nextFloat(-50, 50), 0.2f, Interpolation.sine)
+                    )));
+        }
+        selectedCardActors.clear();
+    }
+
+    public void removeCardActorsFromStackToHand() {
+        System.out.println("Returning stack cards to player's hand...");
+
+        for (CardActor cardActor : stackCardActors) {
+            flipWithAnimation(cardActor); // Animacja obrotu
+            float targetX = stage.getWidth() / 2 - 200 + handCardActors.size() * 50;
+            float targetY = 150;
+
+            cardActor.addAction(Actions.sequence(
+                Actions.moveTo(targetX, targetY, 0.5f, Interpolation.sineOut),
+                Actions.run(() -> {
+                    if (!handCardActors.contains(cardActor)) {
+                        handCardActors.add(cardActor);
+                    }
+                })
+            ));
+        }
+        stackCardActors.clear();
+    }
+
+    public void removeCardActorsFromStackToDeck() {
+        System.out.println("Returning stack cards to the deck...");
+
+        for (int i = 0; i < stackCardActors.size(); i++) {
+            CardActor cardActor = stackCardActors.get(i);
+            float targetX = stage.getWidth() / 2 - 570 + i * 0.3f;
+            float targetY = stage.getHeight() / 2 - 100 + i * 0.3f;
+
+            cardActor.addAction(Actions.sequence(
+                Actions.parallel(
+                    Actions.moveTo(targetX, targetY, 0.5f, Interpolation.sineOut),
+                    Actions.rotateTo(0, 0.2f, Interpolation.sine)
+                ),
+                Actions.run(() -> {
+                    if (!cardActors.contains(cardActor)) {
+                        cardActors.add(cardActor);
+                    }
+                })
+            ));
+        }
+        stackCardActors.clear();
+    }
+
+    private void updateStackActors() {
+        Random rand = new Random();
+        List<CardActor> newStackCardActors = new ArrayList<>();
+
+        for (Card card : gameController.getStack().getCardsFromStack()) {
+            boolean found = false;
+
+
+            for (CardActor stackCardActor : stackCardActors) {
+                if (stackCardActor.contains(card)) {
+                    found = true;
+                    break;
+                }
+            }
+
+
+            if (!found) {
+                CardActor newActor = null;
+
+                for (CardActor cardActor : cardActors) {
+                    if (cardActor.contains(card)) {
+                        newActor = cardActor;
+                        break;
+                    }
+                }
+
+                if (newActor == null) {
+                    newActor = new CardActor(card);
+                    stage.addActor(newActor);
+                }
+
+                newStackCardActors.add(newActor);
+                newActor.toFront();
+            }
+        }
+
+        stackCardActors.addAll(newStackCardActors);
+
+        for (int i = 0; i < newStackCardActors.size(); i++) {
+            float targetX = stage.getWidth() / 2 + 570 + (i) * 0.3f;
+            newStackCardActors.get(i).addAction(
+                Actions.parallel(
+                    Actions.moveTo(targetX, stage.getHeight() / 2 - 100, 0.7f, Interpolation.sine),
+                    Actions.rotateBy(rand.nextFloat(-50, 50), 0.2f, Interpolation.sine)
+                ));
+        }
+
+        System.out.println("Stack size: " + gameController.getStack().getCardsFromStack().size());
+        System.out.println("Stack actors size: " + stackCardActors.size());
     }
 
     private void flipWithAnimation(CardActor cardActor) {
@@ -274,12 +421,14 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        stage.act(Gdx.graphics.getDeltaTime());
-        findCardActors();
-        canUseButtons();
-        moveCardActors();
+        if (!gameStartedChecked && gameController.getIsGameStarted()) {
+            gameStartedChecked = true;
+            addCardActorsToHand();
+            moveCardActorsToHand();
+        }
 
-        stage.act();
+        canUseButtons();
+        stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
     }
 
@@ -306,5 +455,18 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
+    public void debug() {
+        System.out.println("------- DEBUG -------");
+        System.out.println("Player: " + player.getName());
+        System.out.println("Hand: " + player.getHand().size());
+        System.out.println("Hand Actors: " + handCardActors.size());
+        System.out.println("Card Actors: " + cardActors.size());
+        System.out.println("----- DEBUG END -----");
     }
 }

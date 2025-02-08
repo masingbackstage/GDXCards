@@ -19,6 +19,7 @@ import java.io.IOException;
 public class StartMenuScreen implements Screen {
     private final Stage stage;
     private final Main main;
+    private GameScreen gameScreen;
 
 
     public StartMenuScreen(Main main) {
@@ -44,7 +45,9 @@ public class StartMenuScreen implements Screen {
                     GameInstance serverInstance = new GameServer(main);
                     main.setGameInstance(serverInstance);
                     main.getGameController().setGameInstance(serverInstance);
-                    main.setScreen(new GameScreen(stage, main.getGameController(), main.getPlayer(), serverInstance));
+                    gameScreen = new GameScreen(stage, main.getGameController(), main.getPlayer(), serverInstance);
+                    serverInstance.setGameScreen(gameScreen);
+                    main.setScreen(gameScreen);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -61,7 +64,9 @@ public class StartMenuScreen implements Screen {
                     GameInstance clientInstance = new GameClient(main);
                     main.setGameInstance(clientInstance);
                     main.getGameController().setGameInstance(clientInstance);
-                    main.setScreen(new GameScreen(stage, main.getGameController(), main.getPlayer(), clientInstance));
+                    gameScreen = new GameScreen(stage, main.getGameController(), main.getPlayer(), clientInstance);
+                    clientInstance.setGameScreen(gameScreen);
+                    main.setScreen(gameScreen);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -70,6 +75,10 @@ public class StartMenuScreen implements Screen {
 
         table.add(serverButton).pad(10).row();
         table.add(clientButton).pad(10);
+    }
+
+    public GameScreen getGameScreen() {
+        return gameScreen;
     }
 
 

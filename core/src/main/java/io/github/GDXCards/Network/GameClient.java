@@ -1,12 +1,15 @@
 package io.github.GDXCards.Network;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import io.github.GDXCards.GameController;
 import io.github.GDXCards.GameUtilities.*;
 import io.github.GDXCards.Main;
+import io.github.GDXCards.UIUtilities.GameScreen;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,17 +18,28 @@ public class GameClient implements GameInstance {
     private final Client client;
     private Connection serverConnection;
     private final Main main;
-    private final Player player;
     private GameController gameController;
+    private Kryo kryo;
+    private GameScreen gameScreen;
 
     public GameClient(Main main) throws IOException {
         this.main = main;
         client = new Client();
         this.gameController = main.getGameController();
-        this.player = main.getPlayer();
-        registerClasses();
+        kryo = client.getKryo();
+
+
+        registerClasses(kryo);
         addListeners();
         startClient("127.0.0.1");
+    }
+    @Override
+    public void setGameScreen(GameScreen gameScreen) {
+        this.gameScreen = gameScreen;
+    }
+
+    public void sendStackCheckResult(boolean result) {
+        serverConnection.sendTCP(result);
     }
 
     public void startClient(String host) throws IOException {
@@ -37,29 +51,12 @@ public class GameClient implements GameInstance {
         client.stop();
     }
 
-    private void registerClasses() {
-        client.getKryo().register(GameServer.class);
-        client.getKryo().register(GameClient.class);
-        client.getKryo().register(ArrayList.class);
-        client.getKryo().register(Card.class);
-        client.getKryo().register(Card.Rank.class);
-        client.getKryo().register(Card.Suit.class);
-        client.getKryo().register(Player.class);
-        client.getKryo().register(Person.class);
-        client.getKryo().register(Deck.class);
-        client.getKryo().register(Stack.class);
-        client.getKryo().register(String.class);
-        client.getKryo().register(GameController.class);
-        client.getKryo().register(com.badlogic.gdx.utils.Array.class);
-        client.getKryo().register(java.lang.Object[].class);
-    }
-
     private void addListeners() {
         client.addListener(new Listener() {
             @Override
             public void connected(Connection connection) {
                 serverConnection = connection;
-                serverConnection.sendTCP(player);
+                serverConnection.sendTCP(main.getPlayer());
             }
 
             @Override
@@ -69,26 +66,51 @@ public class GameClient implements GameInstance {
 
             @Override
             public void received(Connection connection, Object object) {
-                if (object instanceof GameController recievedGameController) {
+                if(object instanceof StackCheckMessage message) {
+                    handleStackCheck(message.getResult(), gameController, main, gameScreen);
+                }
+                if (object instanceof GameController receivedGameController) {
+                    System.out.println("Received updated game state!");
+
                     main.getGameController().setGameState(
-                            recievedGameController.getDeck(),
-                            recievedGameController.getStack(),
-                            recievedGameController.getPlayers(),
-                            recievedGameController.getCurrentPlayerIndex(),
-                            recievedGameController.getIsGameStarted()
+                        receivedGameController.getDeck(),
+                        receivedGameController.getStack(),
+                        receivedGameController.getPlayers(),
+                        receivedGameController.getCurrentPlayerIndex(),
+                        receivedGameController.getIsGameStarted()
                     );
-                    for (Player recievedPlayer : recievedGameController.getPlayers()) {
-                        if (recievedPlayer.getID() == player.getID()) {
-                            player.setHand(recievedPlayer.getHand());
+
+                    for (Player gamePlayer : gameController.getPlayers()) {
+                        if(gamePlayer.getID() == main.getPlayer().getID()) {
+                            System.out.println("Game player hand size: " + gamePlayer.getHand().size());
+                            main.setPlayer(gamePlayer);
+                            System.out.println("Player hand size (main): " + main.getPlayer().getHand().size());
                         }
                     }
-                    System.out.println("Received: " + gameController);
+                    Gdx.app.postRunnable(() -> {
+                        if (gameScreen != null) {
+                            gameScreen.setPlayer(main.getPlayer());
+                            gameScreen.debug();
+                            gameScreen.updateGameState();
+
+                        } else {
+                            System.err.println("GameScreen is null! Cannot update UI.");
+                        }
+                    });
                 }
             }
+
         });
     }
 
     public void sendGameState() {
-        serverConnection.sendTCP(gameController.getGameState());
+        if (serverConnection != null) {
+            System.out.println("Sending game state");
+            serverConnection.sendTCP(gameController.getGameState());
+        } else {
+            System.err.println("Server connection is null! Cannot send game state.");
+        }
     }
+
+
 }

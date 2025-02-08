@@ -4,7 +4,6 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.GDXCards.GameUtilities.Person;
 import io.github.GDXCards.GameUtilities.Player;
 import io.github.GDXCards.Network.GameInstance;
@@ -40,6 +39,10 @@ public class Main extends Game {
 
     public Player getPlayer() {
         return player;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 
     public void setGameInstance(GameInstance gameInstance) {

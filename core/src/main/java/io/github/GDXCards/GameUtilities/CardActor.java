@@ -10,9 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import java.io.Serializable;
 
-public class CardActor  extends Actor {
-    private final Card.Rank rank;
-    private final Card.Suit suit;
+public class CardActor extends Actor {
+    Card card;
     private boolean isFaceUp;
     private boolean isClicked;
 
@@ -23,8 +22,7 @@ public class CardActor  extends Actor {
     private transient Texture backTexture;
 
     public CardActor(Card card) {
-        this.rank = card.getRank();
-        this.suit = card.getSuit();
+        this.card = card;
         this.isFaceUp = false;
         this.isClicked = false;
         this.texturePath = getTexturePath();
@@ -38,6 +36,7 @@ public class CardActor  extends Actor {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 isClicked = !isClicked;
+                card.setClicked(isClicked);
                 raiseCard();
             }
         });
@@ -56,20 +55,26 @@ public class CardActor  extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         loadTextures();
         Texture toDraw = isFaceUp ? frontTexture : backTexture;
-        batch.draw(toDraw, getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(),
-            getScaleX(), getScaleY(), getRotation(), 0, 0, 120, 200, false, false);
+        if (isFaceUp) {
+            batch.draw(toDraw, getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(),
+                getScaleX(), getScaleY(), getRotation(), 0, 0, 120, 200, false, false);
+        } else {
+            batch.draw(toDraw, getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(),
+                getScaleX(), getScaleY(), getRotation(), 0, 0, 140, 200, false, false);
+        }
+
     }
 
     public String getTexturePath() {
-        String rankName = switch (rank) {
+        String rankName = switch (card.getRank()) {
             case A -> "A";
             case J -> "J";
             case Q -> "Q";
             case K -> "K";
-            default -> rank.name().substring(1);
+            default -> card.getRank().name().substring(1);
         };
 
-        String suitName = switch (suit) {
+        String suitName = switch (card.getSuit()) {
             case Hearts -> "C";
             case Spades -> "N";
             case Diamonds -> "W";
@@ -92,11 +97,23 @@ public class CardActor  extends Actor {
 
     public void setFaceUp(boolean faceUp) { isFaceUp = faceUp; }
 
-    public Card.Rank getRank() { return rank; }
+    public Card.Rank getRank() { return card.getRank(); }
 
-    public Card.Suit getSuit() { return suit; }
+    public Card.Suit getSuit() { return card.getSuit(); }
 
     public boolean isClicked() {
         return isClicked;
+    }
+
+    public Card getCard() {
+        return card;
+    }
+
+    public void setClicked(boolean clicked) {
+        isClicked = clicked;
+    }
+
+    public boolean contains(Card checkedCard) {
+        return checkedCard.getSuit() == card.getSuit() && checkedCard.getRank() == card.getRank();
     }
 }

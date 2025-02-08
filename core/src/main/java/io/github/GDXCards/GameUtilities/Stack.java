@@ -20,10 +20,18 @@ public class Stack {
         System.out.println("Current rank is: " + currentRank);
     }
 
+    public Card.Rank getCurrentRank() {
+        return currentRank;
+    }
+
     public void addToStack(List<Card> newCards, Player lastPlayer) {
+        for(Card card : newCards) {
+            card.setClicked(false);
+        }
         cards.addAll(newCards);
         topCards = newCards;
         this.lastPlayer = lastPlayer;
+        System.out.println("Cards added to the stack: " + topCards.size());
     }
 
     public List<Card> getCardsFromStack()
@@ -31,8 +39,19 @@ public class Stack {
         return cards;
     }
 
-    private void clearStack() {
+    public void clearStack() {
         updateCurrentRank(Card.Rank.N2);
         cards.clear();
+    }
+
+    public boolean isValid() {
+        for (Card card : topCards) {
+            if (card.getRank() != currentRank) {
+                System.out.println("----------------------Player was cheating----------------------");
+                return false;
+            }
+        }
+        System.out.println("--------------------Player was telling truth-------------------");
+        return true;
     }
 }

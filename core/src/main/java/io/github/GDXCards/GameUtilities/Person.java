@@ -7,7 +7,7 @@ import java.util.Random;
 public class Person implements Player {
     private String name;
     private final int ID;
-
+    private Card.Rank selectedRank;
     private List<Card> hand;
 
 
@@ -16,6 +16,7 @@ public class Person implements Player {
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
+        selectedRank = Card.Rank.N2;
     }
 
     public Person() {
@@ -23,6 +24,7 @@ public class Person implements Player {
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
+        selectedRank = Card.Rank.N2;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class Person implements Player {
                 selectedCards.add(card);
             }
         }
-        hand.remove(selectedCards);
+        hand.removeAll(selectedCards);
         sortHand();
         return selectedCards;
     }
@@ -75,5 +77,17 @@ public class Person implements Player {
     @Override
     public void setHand(List<Card> hand) {
         this.hand = hand;
+    }
+
+    @Override
+    public Card.Rank getSelectedRank() {
+        return selectedRank;
+    }
+
+    @Override
+    public void setSelectedRank(String name) {
+        for (Card.Rank rank : Card.Rank.values()) {
+            if (name.equals(rank.toString())) selectedRank = rank;
+        }
     }
 }

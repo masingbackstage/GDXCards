@@ -4,6 +4,7 @@ import io.github.GDXCards.GameUtilities.Deck;
 import io.github.GDXCards.GameUtilities.Player;
 import io.github.GDXCards.GameUtilities.Stack;
 import io.github.GDXCards.Network.GameInstance;
+import io.github.GDXCards.UIUtilities.GameScreen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,16 @@ public class GameController {
         gameInstance = new GameInstance() {
             @Override
             public void sendGameState() {
+
+            }
+
+            @Override
+            public void setGameScreen(GameScreen gameScreen) {
+
+            }
+
+            @Override
+            public void sendStackCheckResult(boolean result) {
 
             }
         };
@@ -87,12 +98,26 @@ public class GameController {
         return stack;
     }
 
-    public void checkStack() {
+    public boolean checkStack() {
+        if (stack.isValid()) {
+            getCurrentPlayer().addCards(stack.getCardsFromStack());
+            stack.clearStack();
+            nextPlayer();
+            return true;
+        } else {
+            int previousPlayerIndex = (currentPlayerIndex - 1 + players.size()) % players.size();
+            players.get(previousPlayerIndex).addCards(stack.getCardsFromStack());
+            stack.clearStack();
+            nextPlayer();
+            return false;
+        }
+
     }
 
     public void addToStack() {
         System.out.println(players.get(currentPlayerIndex).getName() + " adds to stack!");
         stack.addToStack(players.get(currentPlayerIndex).removeCards(), players.get(currentPlayerIndex));
+        System.out.println("Stack size: " + stack.getCardsFromStack().size());
         nextPlayer();
     }
 
@@ -106,8 +131,20 @@ public class GameController {
         this.gameInstance = gameInstance;
     }
 
+    public GameInstance getGameInstance() {
+        return gameInstance;
+    }
+
     public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
+    }
+
+    public int getPreviousPlayerIndex() {
+        return (currentPlayerIndex - 1 + players.size()) % players.size();
+    }
+
+    public Player getPreviousPlayer() {
+        return players.get(getPreviousPlayerIndex());
     }
 
     public void setGameState(Deck deck, Stack stack, List<Player> players, int currentPlayerIndex, boolean isGameStarted) {
