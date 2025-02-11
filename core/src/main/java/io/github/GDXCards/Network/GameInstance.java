@@ -37,11 +37,16 @@ public interface GameInstance {
 
     public void sendStackCheckResult(boolean result);
 
-    default void handleStackCheck(boolean message, GameController gameController, Main main, GameScreen gameScreen) {
-        if (!message && gameController.getPreviousPlayer().getID() == main.getPlayer().getID()) {
+    default void handleStackCheck(StackCheckMessage msg, GameController gameController, Main main, GameScreen gameScreen) {
+        System.out.println("Handling stack check");
+        System.out.println("MSG PLAYER ID: " + msg.getPlayer().getID());
+        System.out.println("MY ID: " + main.getPlayer().getID());
+        if (!msg.getResult() && msg.getPlayer().getID() == main.getPlayer().getID()) {
             gameScreen.removeCardActorsFromStackToHand();
+            System.out.println("I take!");
         } else {
             gameScreen.removeCardActorsFromStackToDeck();
+            System.out.println("I do not take!");
         }
         gameScreen.updateGameState();
     }

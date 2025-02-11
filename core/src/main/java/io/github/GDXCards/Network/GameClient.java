@@ -39,7 +39,7 @@ public class GameClient implements GameInstance {
     }
 
     public void sendStackCheckResult(boolean result) {
-        serverConnection.sendTCP(result);
+        serverConnection.sendTCP(new StackCheckMessage(result, main.getGameController().getCurrentPlayer()));
     }
 
     public void startClient(String host) throws IOException {
@@ -67,7 +67,8 @@ public class GameClient implements GameInstance {
             @Override
             public void received(Connection connection, Object object) {
                 if(object instanceof StackCheckMessage message) {
-                    handleStackCheck(message.getResult(), gameController, main, gameScreen);
+                    handleStackCheck(message, gameController, main, gameScreen);
+                    System.out.println("Received stack check message!");
                 }
                 if (object instanceof GameController receivedGameController) {
                     System.out.println("Received updated game state!");

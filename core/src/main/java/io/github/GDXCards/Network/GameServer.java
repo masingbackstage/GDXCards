@@ -69,7 +69,8 @@ public class GameServer implements GameInstance{
             @Override
             public void received(Connection connection, Object object) {
                 if(object instanceof StackCheckMessage message) {
-                    handleStackCheck(message.getResult(), gameController, main, gameScreen);
+                    handleStackCheck(message, gameController, main, gameScreen);
+                    System.out.println("Received stack check message!");
                 }
                 if (object instanceof Player ClientPlayer) {
                     gameController.addPlayer(ClientPlayer);
@@ -108,6 +109,6 @@ public class GameServer implements GameInstance{
     }
 
     public void sendStackCheckResult(boolean result) {
-        server.sendToAllTCP(result);
+        server.sendToAllTCP(new StackCheckMessage(result, main.getGameController().getCurrentPlayer()));
     }
 }

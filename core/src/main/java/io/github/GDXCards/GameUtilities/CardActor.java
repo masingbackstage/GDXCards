@@ -116,4 +116,8 @@ public class CardActor extends Actor {
     public boolean contains(Card checkedCard) {
         return checkedCard.getSuit() == card.getSuit() && checkedCard.getRank() == card.getRank();
     }
+
+    public void setFaceUpTrue() {
+        isFaceUp = true;
+    }
 }
