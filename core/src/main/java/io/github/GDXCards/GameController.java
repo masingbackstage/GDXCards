@@ -102,13 +102,11 @@ public class GameController {
         if (stack.isValid()) {
             getCurrentPlayer().addCards(stack.getCardsFromStack());
             stack.clearStack();
-            nextPlayer();
             return true;
         } else {
             int previousPlayerIndex = (currentPlayerIndex - 1 + players.size()) % players.size();
             players.get(previousPlayerIndex).addCards(stack.getCardsFromStack());
             stack.clearStack();
-            nextPlayer();
             return false;
         }
 
@@ -119,12 +117,12 @@ public class GameController {
         stack.addToStack(players.get(currentPlayerIndex).removeCards(), players.get(currentPlayerIndex));
         System.out.println("Stack size: " + stack.getCardsFromStack().size());
         nextPlayer();
+        gameInstance.sendGameState();
     }
 
     public void nextPlayer() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         System.out.println("Current player: " + currentPlayerIndex + ". " + players.get(currentPlayerIndex).getName());
-        gameInstance.sendGameState();
     }
 
     public void setGameInstance(GameInstance gameInstance) {

@@ -78,6 +78,8 @@ public class GameServer implements GameInstance{
                     sendGameState();
                 }
                 if (object instanceof GameController recievedGameController) {
+                    System.out.println("Received updated game state!");
+
                     main.getGameController().setGameState(
                         recievedGameController.getDeck(),
                         recievedGameController.getStack(),
@@ -86,6 +88,7 @@ public class GameServer implements GameInstance{
                         recievedGameController.getIsGameStarted()
                     );
                     System.out.println("Received GameController: " + gameController);
+
 
                     Gdx.app.postRunnable(() -> {
                         if (gameScreen != null) {

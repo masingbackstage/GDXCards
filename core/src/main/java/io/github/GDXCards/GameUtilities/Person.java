@@ -76,7 +76,8 @@ public class Person implements Player {
 
     @Override
     public void setHand(List<Card> hand) {
-        this.hand = hand;
+        this.hand.clear();
+        this.hand.addAll(hand);
     }
 
     @Override

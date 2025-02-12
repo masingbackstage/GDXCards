@@ -83,9 +83,7 @@ public class GameClient implements GameInstance {
 
                     for (Player gamePlayer : gameController.getPlayers()) {
                         if(gamePlayer.getID() == main.getPlayer().getID()) {
-                            System.out.println("Game player hand size: " + gamePlayer.getHand().size());
-                            main.setPlayer(gamePlayer);
-                            System.out.println("Player hand size (main): " + main.getPlayer().getHand().size());
+                            main.getPlayer().setHand(gamePlayer.getHand());
                         }
                     }
                     Gdx.app.postRunnable(() -> {
