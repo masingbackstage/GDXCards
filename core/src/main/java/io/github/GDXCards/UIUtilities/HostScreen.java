@@ -160,6 +160,43 @@ public class HostScreen extends ClientScreen{
         }
     }
 
+    SelectBox<String> getStringSelectBox(Skin skin) {
+        Array<String> ranks = new Array<>();
+
+        for (Card.Rank rank : Card.Rank.values()) {
+            ranks.add(rank.name());
+        }
+
+        SelectBox<String> rankSelectBox = new SelectBox<>(skin);
+        rankSelectBox.setItems(ranks);
+
+        rankSelectBox.setSelected("N2");
+
+        rankSelectBox.setSize(300, 100);
+        rankSelectBox.setPosition(740, 20);
+
+        rankSelectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                for (Card.Rank rank : Card.Rank.values()) {
+                    if (rankSelectBox.getSelected().equals(rank.toString())) selectedRank = rank;
+                }
+                System.out.println("Selected rank [UI]: " + selectedRank);
+            }
+        });
+        return rankSelectBox;
+    }
+
+    public void updateRankSelectBox() {
+        Array<String> ranks = new Array<>();
+        for (Card.Rank rank : Card.Rank.values()) {
+            if (rank.ordinal() <= getController().getCurrentRank().ordinal()) {
+                ranks.add(rank.name());
+            }
+        }
+        rankSelectBox.setItems(ranks);
+    }
+
     //======================CARD ACTORS======================//
 
 
