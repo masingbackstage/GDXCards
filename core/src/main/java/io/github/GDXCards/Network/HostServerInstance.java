@@ -35,7 +35,7 @@ public class HostServerInstance implements ServerInstance {
         kryo = server.getKryo();
         this.main = main;
         playerHost = new Person();
-        playerHost.setName("HOST");
+        playerHost.setName(name);
         hostController = new HostController(this);
         hostController.addPlayer(playerHost);
         hostScreen = new HostScreen(main.getStage(), hostController);
