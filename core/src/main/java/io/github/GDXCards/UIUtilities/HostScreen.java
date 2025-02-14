@@ -189,13 +189,20 @@ public class HostScreen extends ClientScreen{
 
     public void updateRankSelectBox() {
         Array<String> ranks = new Array<>();
+
         for (Card.Rank rank : Card.Rank.values()) {
             if (rank.ordinal() <= getController().getCurrentRank().ordinal()) {
                 ranks.add(rank.name());
             }
         }
+
         rankSelectBox.setItems(ranks);
+
+        if (ranks.size > 0) {
+            rankSelectBox.setSelected(ranks.get(ranks.size - 1));
+        }
     }
+
 
     //======================CARD ACTORS======================//
 
