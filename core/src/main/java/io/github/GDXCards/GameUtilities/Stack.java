@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Stack {
-    private List<Card> cards;
+    private final List<Card> cards;
     private Card.Rank currentRank;
     private List <Card> topCards;
     private Player lastPlayer;
@@ -24,14 +24,13 @@ public class Stack {
         return currentRank;
     }
 
-    public void addToStack(List<Card> newCards, Player lastPlayer) {
-        for(Card card : newCards) {
-            card.setClicked(false);
-        }
+    public void addToStack(List<Card> newCards, Player lastPlayer, Card.Rank newRank) {
         cards.addAll(newCards);
         topCards = newCards;
         this.lastPlayer = lastPlayer;
+        currentRank = newRank;
         System.out.println("Cards added to the stack: " + topCards.size());
+        System.out.println("Current rank is [Stack]: " + currentRank);
     }
 
     public List<Card> getCardsFromStack()

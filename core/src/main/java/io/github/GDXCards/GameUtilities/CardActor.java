@@ -3,12 +3,11 @@ package io.github.GDXCards.GameUtilities;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-
-import java.io.Serializable;
 
 public class CardActor extends Actor {
     Card card;
@@ -21,11 +20,14 @@ public class CardActor extends Actor {
     private transient Texture frontTexture;
     private transient Texture backTexture;
 
+    private String playerName;
+
     public CardActor(Card card) {
         this.card = card;
         this.isFaceUp = false;
         this.isClicked = false;
         this.texturePath = getTexturePath();
+        playerName = "";
 
         loadTextures();
 
@@ -35,11 +37,16 @@ public class CardActor extends Actor {
         addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                isClicked = !isClicked;
-                card.setClicked(isClicked);
-                raiseCard();
+                if (isClicked) lowerCard();
+                else raiseCard();
             }
         });
+    }
+
+    public CardActor() {
+        this(new Card());
+        loadDummyTextures();
+        playerName = "";
     }
 
     private void loadTextures() {
@@ -49,6 +56,11 @@ public class CardActor extends Actor {
         if (backTexture == null) {
             backTexture = new Texture(Gdx.files.internal(backTexturePath));
         }
+    }
+
+    private void loadDummyTextures() {
+        frontTexture = new Texture(Gdx.files.internal(backTexturePath));
+        backTexture = new Texture(Gdx.files.internal(backTexturePath));
     }
 
     @Override
@@ -84,18 +96,29 @@ public class CardActor extends Actor {
         return "Cards/" + rankName + "_" + suitName + ".png";
     }
 
+    public String getPlayerName() {
+        return playerName;
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
+    }
+
     public void raiseCard() {
         if (!isFaceUp) return;
-        addAction(Actions.moveBy(0, isClicked ? 20 : -20, 0.2f));
+        if (isClicked) return;
+        isClicked = true;
+        addAction(Actions.moveBy(0, 20, 0.2f, Interpolation.exp5));
+    }
+
+    public void lowerCard() {
+        if (!isFaceUp) return;
+        if (!isClicked) return;
+        isClicked = false;
+        addAction(Actions.moveBy(0, -20, 0.2f, Interpolation.exp5));
     }
 
     public boolean isFaceUp() { return isFaceUp; }
-
-    public void flip() {
-        isFaceUp = !isFaceUp;
-    }
-
-    public void setFaceUp(boolean faceUp) { isFaceUp = faceUp; }
 
     public Card.Rank getRank() { return card.getRank(); }
 
@@ -119,5 +142,9 @@ public class CardActor extends Actor {
 
     public void setFaceUpTrue() {
         isFaceUp = true;
+    }
+
+    public void setFaceUpFalse() {
+        isFaceUp = false;
     }
 }

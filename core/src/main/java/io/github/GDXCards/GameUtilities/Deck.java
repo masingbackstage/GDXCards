@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Deck {
-    private ArrayList<Card> deck;
+    private final ArrayList<Card> deck;
 
     public Deck() {
         deck = new ArrayList<>();
@@ -29,10 +29,6 @@ public class Deck {
             cards.add(getRandomFromDeck());
         }
         return cards;
-    }
-
-    public List<Card> getDeck() {
-        return deck;
     }
 
 }
