@@ -24,24 +24,21 @@ public class ClientServerInstance implements ServerInstance {
     private final Main main;
     private final Player playerClient;
     private final ClientController clientController;
-    private final String ipAddress;
 
     public ClientServerInstance(Main main, String name, String ipAddress) throws IOException {
         client = new Client();
         kryo = client.getKryo();
         this.main = main;
-        this.ipAddress = ipAddress;
         playerClient = new Person();
         playerClient.setName(name);
         clientController = new ClientController(this);
         clientController.setPlayer(playerClient);
         clientScreen = new ClientScreen(main.getStage(), clientController);
-
         main.setScreen(clientScreen);
-
         registerClasses(kryo);
         addListeners();
         startClient(ipAddress);
+
     }
 
     public void startClient(String host) throws IOException {
@@ -49,8 +46,9 @@ public class ClientServerInstance implements ServerInstance {
         client.connect(5000, host, 54555, 54777);
     }
 
-    public void stopClient() {
+    public void stop() {
         client.stop();
+        main.setScreen(main.getStartMenuScreen());
     }
 
     private void addListeners() {
@@ -74,6 +72,7 @@ public class ClientServerInstance implements ServerInstance {
                     clientController.setOtherPlayers(((UpdateMessage) object).getPlayersHandSize());
                     clientController.setMyTurn(((UpdateMessage) object).isMyTurn());
                     clientController.setCurrentRank(((UpdateMessage) object).getRank());
+                    clientController.setLastAddedCards(((UpdateMessage) object).getLastAddedCards());
                     Gdx.app.postRunnable(clientScreen::updateHandCardActors);
                     Gdx.app.postRunnable(clientScreen::updateOtherPlayers);
                     Gdx.app.postRunnable(clientScreen::updateStackCardActors);

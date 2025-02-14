@@ -43,4 +43,6 @@ public interface ServerInstance {
 
     }
 
+    public void stop();
+
 }

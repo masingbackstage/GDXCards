@@ -2,10 +2,8 @@ package io.github.GDXCards.UIUtilities;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -32,9 +30,11 @@ public class ClientScreen implements Screen {
     private final List<CardActor> handCardActors;
     private final List<CardActor> stackCardActors;
 
+    Skin skin;
     TextButton addToStackButton;
     TextButton checkStackButton;
     SelectBox<String> rankSelectBox;
+    Label stackLabel;
 
     Map<String, Integer> otherPlayers;
     List <Label> otherPlayersLabels;
@@ -54,12 +54,13 @@ public class ClientScreen implements Screen {
 
         selectedRank = Card.Rank.N2;
 
+
         setBackground();
         initializeUI();
     }
     //========================BUTTONS========================//
     private void initializeUI() {
-        Skin skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+        skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
         //Rank Select Box
         rankSelectBox = getStringSelectBox(skin);
@@ -94,6 +95,16 @@ public class ClientScreen implements Screen {
         getStage().addActor(addToStackButton);
         getStage().addActor(checkStackButton);
         getStage().addActor(rankSelectBox);
+
+        stackLabel = new Label("", skin);
+        stackLabel.setPosition(getStage().getWidth() / 2 + 100, getStage().getHeight() / 2 - 13);
+        if(getController().getStackCards() == null) {
+            stackLabel.setText("0 N2");
+        }
+
+        getStage().addActor(stackLabel);
+
+
     }
 
     SelectBox<String> getStringSelectBox(Skin skin) {
@@ -138,7 +149,6 @@ public class ClientScreen implements Screen {
             rankSelectBox.setSelected(ranks.get(ranks.size - 1));
         }
     }
-
 
     void setBackground() {
         Texture backgroundTexture = new Texture(Gdx.files.internal("ui/back_texture.png"));
@@ -334,14 +344,11 @@ public class ClientScreen implements Screen {
             float posX = positions[i][0];
             float posY = positions[i][1];
 
-            // Tworzenie etykiety dla gracza
-            Label playerLabel = new Label(playerName + " (" + newCardCount + ")",
-                new Label.LabelStyle(new BitmapFont(), Color.WHITE));
-            playerLabel.setPosition(posX + 30, posY + 200);
+            Label playerLabel = new Label(playerName + " (" + newCardCount + ")", skin);
+            playerLabel.setPosition(posX - 30, posY + 200);
             getStage().addActor(playerLabel);
             otherPlayersLabels.add(playerLabel);
 
-            // Znalezienie obecnych kart gracza
             List<CardActor> playerCards = otherPlayersCardActors.stream()
                 .filter(actor -> actor.getPlayerName().equals(playerName))
                 .collect(Collectors.toList());
@@ -349,12 +356,12 @@ public class ClientScreen implements Screen {
             int currentCardCount = playerCards.size();
 
             if (newCardCount < currentCardCount) {
-                // Gracz stracił karty – przenieś nadmiarowe karty na stos
+
                 List<CardActor> toRemove = playerCards.subList(newCardCount, currentCardCount);
                 for (CardActor card : toRemove) {
                     card.addAction(Actions.sequence(
                         Actions.moveTo(getStage().getWidth() / 2 - 70, getStage().getHeight() / 2 - 100, 0.5f, Interpolation.exp10),
-                        Actions.run(card::remove) // Usunięcie karty po animacji
+                        Actions.run(card::remove)
                     ));
                     removedActors.add(card);
                 }
@@ -371,6 +378,7 @@ public class ClientScreen implements Screen {
                         cardActor = new CardActor();
                     }
                     cardActor.setPlayerName(playerName);
+                    cardActor.toFront();
                     cardActor.setPosition(getStage().getWidth()/2 - 70, getStage().getHeight()/2 - 100);
                     getStage().addActor(cardActor);
                     otherPlayersCardActors.add(cardActor);
@@ -387,7 +395,7 @@ public class ClientScreen implements Screen {
             float startX = posX - (newCardCount - 1) * spacing / 2;
 
             for (int j = 0; j < newCardCount; j++) {
-                if (j >= playerCards.size()) break; // Unikamy wyjątku
+                if (j >= playerCards.size()) break;
 
                 CardActor cardActor = playerCards.get(j);
                 float targetX = startX + j * spacing;
@@ -432,6 +440,8 @@ public class ClientScreen implements Screen {
 
 
         }
+        stackLabel.setText(getController().getLastAddedCards() + " "
+            + getController().getCurrentRank());
     }
 
     //=========================OTHER=========================//

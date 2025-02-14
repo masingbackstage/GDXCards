@@ -9,8 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
-import java.io.Serializable;
-
 public class CardActor extends Actor {
     Card card;
     private boolean isFaceUp;
@@ -121,12 +119,6 @@ public class CardActor extends Actor {
     }
 
     public boolean isFaceUp() { return isFaceUp; }
-
-    public void flip() {
-        isFaceUp = !isFaceUp;
-    }
-
-    public void setFaceUp(boolean faceUp) { isFaceUp = faceUp; }
 
     public Card.Rank getRank() { return card.getRank(); }
 

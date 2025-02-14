@@ -18,9 +18,4 @@ public interface Player {
 
     void setHand(List<Card> hand);
 
-    Card.Rank getSelectedRank();
-
-    void setSelectedRank(String name);
-
-    boolean isHost();
 }

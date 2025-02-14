@@ -8,9 +8,8 @@ import java.util.Random;
 public class Person implements Player {
     private String name;
     private final int ID;
-    private Card.Rank selectedRank;
     private final List<Card> hand;
-    private final boolean isHost;
+
 
 
     public Person(String name, boolean isHost) {
@@ -18,8 +17,6 @@ public class Person implements Player {
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
-        this.isHost = isHost;
-        selectedRank = Card.Rank.N2;
     }
 
     public Person() {
@@ -27,8 +24,6 @@ public class Person implements Player {
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
-        isHost = false;
-        selectedRank = Card.Rank.N2;
     }
 
     @Override
@@ -86,22 +81,5 @@ public class Person implements Player {
     public void setHand(List<Card> hand) {
         this.hand.clear();
         this.hand.addAll(hand);
-    }
-
-    @Override
-    public Card.Rank getSelectedRank() {
-        return selectedRank;
-    }
-
-    @Override
-    public void setSelectedRank(String name) {
-        for (Card.Rank rank : Card.Rank.values()) {
-            if (name.equals(rank.toString())) selectedRank = rank;
-        }
-    }
-
-    @Override
-    public boolean isHost() {
-        return isHost;
     }
 }

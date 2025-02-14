@@ -19,6 +19,7 @@ public class HostController implements Controller {
     private int currentPlayerIndex;
     private boolean isGameStarted;
     private final HostServerInstance hostServerInstance;
+    private int lastAddedCards;
 
     private Map<String, Integer> otherPlayers;
 
@@ -30,6 +31,7 @@ public class HostController implements Controller {
         isGameStarted = false;
         hostServerInstance = new HostServerInstance();
         otherPlayers = new HashMap<>();
+        lastAddedCards = 0;
     }
 
     public HostController(HostServerInstance hostServerInstance) {
@@ -40,6 +42,7 @@ public class HostController implements Controller {
         currentPlayerIndex = 0;
         isGameStarted = false;
         otherPlayers = new HashMap<>();
+        lastAddedCards = 0;
     }
 
     public void addPlayer(Player player) {
@@ -57,7 +60,7 @@ public class HostController implements Controller {
 
     public void dealCards() {
         for (Player player : players) {
-            player.addCards(deck.getFromDeck(13));
+            player.addCards(deck.getFromDeck(52/players.size()));
         }
     }
 
@@ -67,10 +70,6 @@ public class HostController implements Controller {
 
     public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
-    }
-
-    public boolean getIsGameStarted() {
-        return isGameStarted;
     }
 
     public Stack getStack() {
@@ -90,6 +89,7 @@ public class HostController implements Controller {
     }
 
     public void addToStack(List <Card> cards, Card.Rank rank) {
+        lastAddedCards = cards.size();
         System.out.println(players.get(currentPlayerIndex).getName() + " adds to stack!");
         players.get(currentPlayerIndex).removeCards(cards);
         System.out.println("Current rank is [Controller]: " + rank);
@@ -154,5 +154,15 @@ public class HostController implements Controller {
     @Override
     public Card.Rank getCurrentRank() {
         return stack.getCurrentRank();
+    }
+
+    @Override
+    public void setLastAddedCards(int lastAddedCards) {
+        this.lastAddedCards = lastAddedCards;
+    }
+
+    @Override
+    public int getLastAddedCards() {
+        return lastAddedCards;
     }
 }

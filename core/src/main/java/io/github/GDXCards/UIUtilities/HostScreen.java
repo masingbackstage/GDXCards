@@ -1,12 +1,8 @@
 package io.github.GDXCards.UIUtilities;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
+
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -19,13 +15,10 @@ import com.badlogic.gdx.utils.Array;
 import io.github.GDXCards.LogicUtilities.Controller;
 import io.github.GDXCards.GameUtilities.Card;
 import io.github.GDXCards.GameUtilities.CardActor;
-import io.github.GDXCards.GameUtilities.Player;
-import io.github.GDXCards.Network.ServerInstance;
 
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+
 
 public class HostScreen extends ClientScreen{
     TextButton addToStackButton;
@@ -34,6 +27,7 @@ public class HostScreen extends ClientScreen{
     TextButton startGameButton;
     List<CardActor> handCardActors;
     List<CardActor> stackCardActors;
+    Label stackLabel;
 
     Map<String, Integer> otherPlayers;
     List <Label> otherPlayersLabels;
@@ -112,6 +106,14 @@ public class HostScreen extends ClientScreen{
         getStage().addActor(addToStackButton);
         getStage().addActor(checkStackButton);
         getStage().addActor(rankSelectBox);
+
+        stackLabel = new Label("", skin);
+        stackLabel.setPosition(getStage().getWidth() / 2 + 100, getStage().getHeight() / 2 - 13);
+        if(getController().getStackCards() == null) {
+            stackLabel.setText("0 N2");
+        }
+
+        getStage().addActor(stackLabel);
 
     }
 
@@ -203,10 +205,36 @@ public class HostScreen extends ClientScreen{
         }
     }
 
-
     //======================CARD ACTORS======================//
 
+    public void updateStackCardActors() {
+        boolean isStackEmpty = stackCardActors.isEmpty();
+        if(!getController().getStackCards().isEmpty()) {
+            for (CardActor cardActor : stackCardActors) {
+                cardActor.remove();
+            }
+        }
+        stackCardActors.clear();
+        for(int i = 0; i < getController().getStackCards().size(); i++) {
+            CardActor cardActor = new CardActor();
+            cardActor.setPosition(getStage().getWidth() / 2 - 70, getStage().getHeight() / 2 - 100);
+            cardActor.toFront();
+            stackCardActors.add(cardActor);
+            cardActor.setVisible(false);
+            getStage().addActor(cardActor);
+            if(!isStackEmpty) {
+                cardActor.addAction(Actions.sequence(
+                    Actions.delay(0.7f),
+                    Actions.show()
+                ));
+            }
+            else cardActor.setVisible(true);
 
+
+        }
+        stackLabel.setText(getController().getLastAddedCards() + " "
+            + getController().getCurrentRank());
+    }
 
     //=========================OTHER=========================//
 
@@ -230,26 +258,4 @@ public class HostScreen extends ClientScreen{
     public void dispose() {
         getStage().dispose();
     }
-
-//    public void debug() {
-//        System.out.println("------- DEBUG -------");
-//        System.out.println("Player: " + player.getName());
-//        System.out.println("Hand: " + player.getHand().size());
-//        System.out.println("Hand Actors: " + handCardActors.size());
-//        System.out.println("Card Actors: " + cardActors.size());
-//        System.out.println("Stack Actors: " + stackCardActors.size());
-//        System.out.println("Stack size: " + getController().getStack().getCardsFromStack().size());
-//        System.out.println("Current stack rank: " + getController().getStack().getCurrentRank());
-//        System.out.println("Previous player: " + getController().getPreviousPlayerIndex());
-//        System.out.println("Player hand cards: ");
-//        for (Card c : player.getHand()) {
-//            System.out.println(" - " + c.getSuit() + " " + c.getRank());
-//        }
-//
-//        System.out.println("Hand actors: ");
-//        for (CardActor ca : handCardActors) {
-//            System.out.println(" - " + ca.getCard().getSuit() + " " + ca.getCard().getRank());
-//        }
-//        System.out.println("----- DEBUG END -----");
-//    }
 }

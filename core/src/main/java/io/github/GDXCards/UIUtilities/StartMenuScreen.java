@@ -21,11 +21,11 @@ public class StartMenuScreen implements Screen {
     private final Stage stage;
     private final Main main;
     private String name;
-    private String ipAddress; // Zmienna na IP
+    private String ipAddress;
     private TextField nameInputField;
-    private TextField ipInputField; // Pole do wpisania adresu IP
+    private TextField ipInputField;
     private Window nameInputWindow;
-    private Label ipLabel; // Etykieta wyświetlająca adres IP
+    private Label ipLabel;
 
     public StartMenuScreen(Main main) {
         this.main = main;
@@ -72,7 +72,7 @@ public class StartMenuScreen implements Screen {
             nameInputWindow.remove();
         }
         nameInputWindow = new Window("Enter Name", skin);
-        nameInputWindow.setSize(500, 250); // Powiększono okno
+        nameInputWindow.setSize(500, 250);
         nameInputWindow.setPosition(
             (stage.getWidth() - nameInputWindow.getWidth()) / 2,
             (stage.getHeight() - nameInputWindow.getHeight()) / 2
@@ -90,7 +90,6 @@ public class StartMenuScreen implements Screen {
                 name = nameInputField.getText();
                 System.out.println("Player name: " + name);
                 if (role.equals("server")) {
-                    // Tworzymy instancję serwera
                     try {
                         ServerInstance serverInstance = new HostServerInstance(main, name);
                     } catch (IOException e) {
@@ -98,12 +97,13 @@ public class StartMenuScreen implements Screen {
                     }
 
                 } else if (role.equals("client")) {
-                    ipAddress = ipInputField.getText(); // Pobierz adres IP z pola tekstowego
+                    ipAddress = ipInputField.getText();
                     System.out.println("Client connecting to: " + ipAddress);
                     try {
                         ServerInstance clientInstance = new ClientServerInstance(main, name, ipAddress);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        System.out.println("Nie można się połączyć z hostem: " + e.getMessage());
+                        main.setScreen(main.getStartMenuScreen());
                     }
                 }
 

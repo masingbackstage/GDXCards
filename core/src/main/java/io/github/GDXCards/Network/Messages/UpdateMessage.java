@@ -13,13 +13,15 @@ public class UpdateMessage {
     private final Map<String, Integer> playersHandSize;
     private final boolean myTurn;
     private final Card.Rank rank;
+    private final int lastAddedCards;
 
-    public UpdateMessage(List<Card> cards, List<Card> stack, Map<String, Integer> playerCardCounts, boolean myTurn, Card.Rank rank) {
+    public UpdateMessage(List<Card> cards, List<Card> stack, Map<String, Integer> playerCardCounts, boolean myTurn, Card.Rank rank, int lastAddedCards) {
         this.cards = cards;
         this.stack = stack;
         this.playersHandSize = playerCardCounts;
         this.myTurn = myTurn;
         this.rank = rank;
+        this.lastAddedCards = lastAddedCards;
     }
 
     public UpdateMessage() {
@@ -28,6 +30,7 @@ public class UpdateMessage {
         this.playersHandSize = new HashMap<>();
         this.myTurn = false;
         this.rank = Card.Rank.N2;
+        this.lastAddedCards = 0;
     }
 
     public List<Card> getCards() {
@@ -48,5 +51,9 @@ public class UpdateMessage {
 
     public Card.Rank getRank() {
         return rank;
+    }
+
+    public int getLastAddedCards() {
+        return lastAddedCards;
     }
 }

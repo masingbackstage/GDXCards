@@ -56,8 +56,9 @@ public class HostServerInstance implements ServerInstance {
         server.start();
     }
 
-    public void stopServer() {
+    public void stop() {
         server.stop();
+        main.setScreen(main.getStartMenuScreen());
     }
 
 
@@ -125,14 +126,16 @@ public class HostServerInstance implements ServerInstance {
                                                     hostController.getStack().getCardsFromStack(),
                                                     hostController.getPlayerMap(player),
                                                     true,
-                                                    hostController.getStack().getCurrentRank())
+                                                    hostController.getStack().getCurrentRank(),
+                                                    hostController.getLastAddedCards())
                );
            } else {
                connection.sendTCP(new UpdateMessage(hostController.getPlayerHand(player),
                    hostController.getStack().getCardsFromStack(),
                    hostController.getPlayerMap(player),
                    false,
-                   hostController.getStack().getCurrentRank())
+                   hostController.getStack().getCurrentRank(),
+                   hostController.getLastAddedCards())
                );
            }
 

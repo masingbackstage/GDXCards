@@ -1,6 +1,6 @@
 package io.github.GDXCards.GameUtilities;
 
-public class Card {
+public class Card extends Person {
 
     private final Card.Rank rank;
     private final Card.Suit suit;

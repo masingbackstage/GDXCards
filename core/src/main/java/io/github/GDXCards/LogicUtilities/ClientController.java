@@ -14,11 +14,13 @@ public class ClientController implements Controller {
     private List<Card> stack;
     private boolean myTurn;
     private Card.Rank currentRank;
+    private int lastAddedCards;
 
     public ClientController(ClientServerInstance clientServerInstance) {
         this.clientServerInstance = clientServerInstance;
         myTurn = false;
         currentRank = Card.Rank.N2;
+        lastAddedCards = 0;
     }
 
     public Player getPlayer() {
@@ -75,4 +77,16 @@ public class ClientController implements Controller {
     public void setCurrentRank(Card.Rank newRank) {
         currentRank = newRank;
     }
+
+    @Override
+    public void setLastAddedCards(int lastAddedCards) {
+        this.lastAddedCards = lastAddedCards;
+    }
+
+    @Override
+    public int getLastAddedCards() {
+        return lastAddedCards;
+    }
+
+
 }

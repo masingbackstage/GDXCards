@@ -54,4 +54,8 @@ public interface Controller {
     }
 
     default void setCurrentRank(Card.Rank newRank) {}
+
+    void setLastAddedCards(int lastAddedCards);
+
+    int getLastAddedCards();
 }

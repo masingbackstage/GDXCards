@@ -31,8 +31,4 @@ public class Deck {
         return cards;
     }
 
-    public List<Card> getDeck() {
-        return deck;
-    }
-
 }
