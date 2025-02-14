@@ -1,6 +1,7 @@
 package io.github.GDXCards.GameUtilities;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -8,14 +9,16 @@ public class Person implements Player {
     private String name;
     private final int ID;
     private Card.Rank selectedRank;
-    private List<Card> hand;
+    private final List<Card> hand;
+    private final boolean isHost;
 
 
-    public Person(String name) {
+    public Person(String name, boolean isHost) {
         this.name = name;
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
+        this.isHost = isHost;
         selectedRank = Card.Rank.N2;
     }
 
@@ -24,6 +27,7 @@ public class Person implements Player {
         Random rand = new Random();
         this.ID = rand.nextInt();
         hand = new ArrayList<>();
+        isHost = false;
         selectedRank = Card.Rank.N2;
     }
 
@@ -32,6 +36,7 @@ public class Person implements Player {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -43,17 +48,20 @@ public class Person implements Player {
     }
 
     @Override
-    public List<Card> removeCards() {
-        List<Card> selectedCards = new ArrayList<>();
-        for (Card card : hand) {
-            if (card.isClicked()) {
-                selectedCards.add(card);
+    public void removeCards(List<Card> cards) {
+        Iterator<Card> iterator = hand.iterator();
+        while (iterator.hasNext()) {
+            Card handCard = iterator.next();
+            for (Card card : cards) {
+                if (card.getRank().equals(handCard.getRank()) && card.getSuit().equals(handCard.getSuit())) {
+                    iterator.remove();
+                    break;
+                }
             }
         }
-        hand.removeAll(selectedCards);
         sortHand();
-        return selectedCards;
     }
+
 
     private void sortHand() {
         hand.sort((card1, card2) -> {
@@ -90,5 +98,10 @@ public class Person implements Player {
         for (Card.Rank rank : Card.Rank.values()) {
             if (name.equals(rank.toString())) selectedRank = rank;
         }
+    }
+
+    @Override
+    public boolean isHost() {
+        return isHost;
     }
 }

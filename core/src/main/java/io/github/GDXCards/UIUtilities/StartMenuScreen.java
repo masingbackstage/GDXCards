@@ -10,22 +10,24 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import io.github.GDXCards.Main;
-import io.github.GDXCards.Network.GameClient;
-import io.github.GDXCards.Network.GameInstance;
-import io.github.GDXCards.Network.GameServer;
+import io.github.GDXCards.Network.ClientServerInstance;
+import io.github.GDXCards.Network.ServerInstance;
+import io.github.GDXCards.Network.HostServerInstance;
 
 import java.io.IOException;
 
 public class StartMenuScreen implements Screen {
     private final Stage stage;
     private final Main main;
-    private GameScreen gameScreen;
+    private HostScreen hostScreen;
+    private String name;
 
 
     public StartMenuScreen(Main main) {
         this.main = main;
         this.stage = main.getStage();
         createMenuUI();
+
     }
 
     private void createMenuUI() {
@@ -42,12 +44,7 @@ public class StartMenuScreen implements Screen {
             public void clicked(InputEvent event, float x, float y)  {
                 System.out.println("Server button pressed");
                 try {
-                    GameInstance serverInstance = new GameServer(main);
-                    main.setGameInstance(serverInstance);
-                    main.getGameController().setGameInstance(serverInstance);
-                    gameScreen = new GameScreen(stage, main.getGameController(), main.getPlayer(), serverInstance);
-                    serverInstance.setGameScreen(gameScreen);
-                    main.setScreen(gameScreen);
+                    ServerInstance serverInstance = new HostServerInstance(main, name);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -61,12 +58,7 @@ public class StartMenuScreen implements Screen {
             public void clicked(InputEvent event, float x, float y)  {
                 System.out.println("Client button pressed");
                 try {
-                    GameInstance clientInstance = new GameClient(main);
-                    main.setGameInstance(clientInstance);
-                    main.getGameController().setGameInstance(clientInstance);
-                    gameScreen = new GameScreen(stage, main.getGameController(), main.getPlayer(), clientInstance);
-                    clientInstance.setGameScreen(gameScreen);
-                    main.setScreen(gameScreen);
+                    ServerInstance clientInstance = new ClientServerInstance(main, name);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -77,14 +69,9 @@ public class StartMenuScreen implements Screen {
         table.add(clientButton).pad(10);
     }
 
-    public GameScreen getGameScreen() {
-        return gameScreen;
-    }
-
 
     @Override
     public void show() {
-
     }
 
     @Override

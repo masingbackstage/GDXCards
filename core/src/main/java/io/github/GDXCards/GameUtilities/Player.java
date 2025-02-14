@@ -4,21 +4,23 @@ import java.util.List;
 
 public interface Player {
 
+    void setName(String name);
 
+    void addCards(List<Card> cards);
 
-    public void addCards(List<Card> cards);
+    void removeCards(List<Card> cards);
 
-    public List<Card> removeCards();
+    int getID();
 
-    public int getID();
+    String getName();
 
-    public String getName();
+    List<Card> getHand();
 
-    public List<Card> getHand();
+    void setHand(List<Card> hand);
 
-    public void setHand(List<Card> hand);
+    Card.Rank getSelectedRank();
 
-    public Card.Rank getSelectedRank();
+    void setSelectedRank(String name);
 
-    public void setSelectedRank(String name);
+    boolean isHost();
 }
