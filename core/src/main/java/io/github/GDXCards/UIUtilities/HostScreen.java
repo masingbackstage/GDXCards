@@ -3,6 +3,7 @@ package io.github.GDXCards.UIUtilities;
 import com.badlogic.gdx.Gdx;
 
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -15,10 +16,10 @@ import com.badlogic.gdx.utils.Array;
 import io.github.GDXCards.LogicUtilities.Controller;
 import io.github.GDXCards.GameUtilities.Card;
 import io.github.GDXCards.GameUtilities.CardActor;
+import io.github.GDXCards.LogicUtilities.HostController;
 
 import java.util.*;
 import java.util.List;
-
 
 public class HostScreen extends ClientScreen{
     TextButton addToStackButton;
@@ -28,6 +29,8 @@ public class HostScreen extends ClientScreen{
     List<CardActor> handCardActors;
     List<CardActor> stackCardActors;
     Label stackLabel;
+    String winner;
+    Window gameOverWindow;
 
     Map<String, Integer> otherPlayers;
     List <Label> otherPlayersLabels;
@@ -36,7 +39,6 @@ public class HostScreen extends ClientScreen{
     Card.Rank selectedRank;
 
     private boolean isGameStarted;
-
 
     public HostScreen(Stage stage, Controller controller) {
         super(stage, controller);
@@ -47,7 +49,7 @@ public class HostScreen extends ClientScreen{
         otherPlayers = new HashMap<>();
         otherPlayersCardActors = new ArrayList<>();
         otherPlayersLabels = new ArrayList<>();
-
+        winner = "";
         selectedRank = Card.Rank.N2;
 
         setBackground();
@@ -55,6 +57,7 @@ public class HostScreen extends ClientScreen{
     }
 
     //========================BUTTONS========================//
+
     private void initializeUI() {
         Skin skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
@@ -114,6 +117,9 @@ public class HostScreen extends ClientScreen{
         }
 
         getStage().addActor(stackLabel);
+
+        gameOverWindow = getGameOverWindow();
+        getStage().addActor(gameOverWindow);
 
     }
 
@@ -205,35 +211,73 @@ public class HostScreen extends ClientScreen{
         }
     }
 
+    public void updateGameOver() {
+        getController().checkWinCondition();
+        winner = getController().getWhoWon();
+        if(Objects.equals(winner, "")){
+            gameOverWindow.setVisible(false);
+            System.out.println("Game not over");
+            return;
+        }
+        System.out.println("Winner is " + winner);
+        gameOverWindow.clear();
+        gameOverWindow.add(new Label(winner + " won!", skin)).pad(5).row();
+        gameOverWindow.setVisible(true);
+        gameOverWindow.toFront();
+
+        if(getController().getClass() == HostController.class) {
+            TextButton newGameButton = new TextButton("New Game", skin);
+            newGameButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    getController().resetGame();
+                    gameOverWindow.setVisible(false);
+                    updateHandCardActors();
+                    updateOtherPlayers();
+                    updateStackCardActors();
+                    updateRankSelectBox();
+                }
+            });
+            gameOverWindow.add(newGameButton).pad(5).row();
+        }
+
+    }
+
     //======================CARD ACTORS======================//
 
     public void updateStackCardActors() {
         boolean isStackEmpty = stackCardActors.isEmpty();
-        if(!getController().getStackCards().isEmpty()) {
-            for (CardActor cardActor : stackCardActors) {
-                cardActor.remove();
-            }
+
+        // Usuń wszystkie istniejące CardActor ze stosu
+        for (CardActor cardActor : stackCardActors) {
+            cardActor.remove();
         }
         stackCardActors.clear();
-        for(int i = 0; i < getController().getStackCards().size(); i++) {
+
+        // Dodaj nowe CardActor do stosu
+        for (int i = 0; i < getController().getStackCards().size(); i++) {
             CardActor cardActor = new CardActor();
-            cardActor.setPosition(getStage().getWidth() / 2 - 70, getStage().getHeight() / 2 - 100);
+            // Ustaw początkową pozycję kart na środku ekranu
+            cardActor.setPosition(getStage().getWidth() / 2, getStage().getHeight() / 2);
             cardActor.toFront();
-            stackCardActors.add(cardActor);
-            cardActor.setVisible(false);
+            stackCardActors.add(cardActor); // Dodaj do listy przed animacją
             getStage().addActor(cardActor);
-            if(!isStackEmpty) {
+
+            // Animacja ruchu na stos
+            cardActor.addAction(Actions.moveTo(getStage().getWidth() / 2 - 70, getStage().getHeight() / 2 - 100, 0.5f, Interpolation.exp10));
+
+            // Animacja pojawiania się kart
+            if (!isStackEmpty) {
                 cardActor.addAction(Actions.sequence(
                     Actions.delay(0.7f),
                     Actions.show()
                 ));
+            } else {
+                cardActor.setVisible(true);
             }
-            else cardActor.setVisible(true);
-
-
         }
-        stackLabel.setText(getController().getLastAddedCards() + " "
-            + getController().getCurrentRank());
+
+        stackLabel.setText(getController().getLastAddedCards() + " " + getController().getCurrentRank());
     }
 
     //=========================OTHER=========================//

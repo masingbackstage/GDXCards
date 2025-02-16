@@ -58,4 +58,16 @@ public interface Controller {
     void setLastAddedCards(int lastAddedCards);
 
     int getLastAddedCards();
+
+    default void setWhoWon(String whoWon) {
+
+    }
+
+    default String getWhoWon() {
+        return "";
+    }
+
+    default void checkWinCondition() {}
+
+    default void resetGame() {}
 }

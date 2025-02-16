@@ -15,12 +15,14 @@ public class ClientController implements Controller {
     private boolean myTurn;
     private Card.Rank currentRank;
     private int lastAddedCards;
+    private String whoWon;
 
     public ClientController(ClientServerInstance clientServerInstance) {
         this.clientServerInstance = clientServerInstance;
         myTurn = false;
         currentRank = Card.Rank.N2;
         lastAddedCards = 0;
+        whoWon = "";
     }
 
     public Player getPlayer() {
@@ -88,5 +90,13 @@ public class ClientController implements Controller {
         return lastAddedCards;
     }
 
+    @Override
+    public void setWhoWon(String whoWon) {
+        this.whoWon = whoWon;
+    }
 
+    @Override
+    public String getWhoWon() {
+        return whoWon;
+    }
 }

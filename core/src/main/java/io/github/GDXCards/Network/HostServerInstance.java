@@ -98,24 +98,27 @@ public class HostServerInstance implements ServerInstance {
                 }
                 if (object instanceof CheckStackMessage) {
                     hostController.checkStack();
-                    Gdx.app.postRunnable(hostScreen::updateHandCardActors);
-                    Gdx.app.postRunnable(hostScreen::updateOtherPlayers);
-                    Gdx.app.postRunnable(hostScreen::updateStackCardActors);
-                    Gdx.app.postRunnable(hostScreen::updateRankSelectBox);
+                    updateGDX();
                 }
                 if (object instanceof SendCardsMessage) {
                     hostController.addToStack(((SendCardsMessage) object).getCards(), ((SendCardsMessage) object).getRank());
-                    Gdx.app.postRunnable(hostScreen::updateHandCardActors);
-                    Gdx.app.postRunnable(hostScreen::updateOtherPlayers);
-                    Gdx.app.postRunnable(hostScreen::updateStackCardActors);
-                    Gdx.app.postRunnable(hostScreen::updateRankSelectBox);
+                    updateGDX();
                 }
             }
         });
     }
 
+    private void updateGDX() {
+        Gdx.app.postRunnable(hostScreen::updateHandCardActors);
+        Gdx.app.postRunnable(hostScreen::updateOtherPlayers);
+        Gdx.app.postRunnable(hostScreen::updateStackCardActors);
+        Gdx.app.postRunnable(hostScreen::updateRankSelectBox);
+        Gdx.app.postRunnable(hostScreen::updateGameOver);
+    }
+
     public void sendGameState() {
         Gdx.app.postRunnable(hostScreen::updateOtherPlayers);
+        Gdx.app.postRunnable(hostScreen::updateGameOver);
         if (playerMap == null) {
             System.err.println("Error: playerMap is null!");
             return;
@@ -127,15 +130,18 @@ public class HostServerInstance implements ServerInstance {
                                                     hostController.getPlayerMap(player),
                                                     true,
                                                     hostController.getStack().getCurrentRank(),
-                                                    hostController.getLastAddedCards())
+                                                    hostController.getLastAddedCards(),
+                                                    hostController.getWhoWon()
+                                                    )
                );
            } else {
                connection.sendTCP(new UpdateMessage(hostController.getPlayerHand(player),
-                   hostController.getStack().getCardsFromStack(),
-                   hostController.getPlayerMap(player),
-                   false,
-                   hostController.getStack().getCurrentRank(),
-                   hostController.getLastAddedCards())
+                                                    hostController.getStack().getCardsFromStack(),
+                                                    hostController.getPlayerMap(player),
+                                                    false,
+                                                    hostController.getStack().getCurrentRank(),
+                                                    hostController.getLastAddedCards(),
+                                                    hostController.getWhoWon())
                );
            }
 

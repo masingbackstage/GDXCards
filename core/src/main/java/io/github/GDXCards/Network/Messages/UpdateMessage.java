@@ -14,14 +14,17 @@ public class UpdateMessage {
     private final boolean myTurn;
     private final Card.Rank rank;
     private final int lastAddedCards;
+    private String whoWon;
 
-    public UpdateMessage(List<Card> cards, List<Card> stack, Map<String, Integer> playerCardCounts, boolean myTurn, Card.Rank rank, int lastAddedCards) {
+    public UpdateMessage(List<Card> cards, List<Card> stack, Map<String, Integer> playerCardCounts, boolean myTurn,
+                         Card.Rank rank, int lastAddedCards, String whoWon) {
         this.cards = cards;
         this.stack = stack;
         this.playersHandSize = playerCardCounts;
         this.myTurn = myTurn;
         this.rank = rank;
         this.lastAddedCards = lastAddedCards;
+        this.whoWon = whoWon;
     }
 
     public UpdateMessage() {
@@ -55,5 +58,9 @@ public class UpdateMessage {
 
     public int getLastAddedCards() {
         return lastAddedCards;
+    }
+
+    public String getWhoWon() {
+        return whoWon;
     }
 }
