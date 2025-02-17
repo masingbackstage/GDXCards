@@ -17,10 +17,10 @@ import com.badlogic.gdx.utils.Array;
 import io.github.GDXCards.GameUtilities.Card;
 import io.github.GDXCards.GameUtilities.CardActor;
 import io.github.GDXCards.LogicUtilities.Controller;
-import java.util.ArrayList;
-import java.util.HashMap;
+import io.github.GDXCards.LogicUtilities.HostController;
+
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -39,6 +39,8 @@ public class ClientScreen implements Screen {
     Map<String, Integer> otherPlayers;
     List <Label> otherPlayersLabels;
     List<CardActor> otherPlayersCardActors;
+    String winner;
+    Window gameOverWindow;
 
     Card.Rank selectedRank;
 
@@ -53,7 +55,7 @@ public class ClientScreen implements Screen {
         otherPlayersLabels = new ArrayList<>();
 
         selectedRank = Card.Rank.N2;
-
+        winner = "";
 
         setBackground();
         initializeUI();
@@ -64,6 +66,8 @@ public class ClientScreen implements Screen {
 
         //Rank Select Box
         rankSelectBox = getStringSelectBox(skin);
+
+        gameOverWindow = getGameOverWindow();
 
         //Add To Stack Button
         addToStackButton = new TextButton("Add to Stack", skin);
@@ -104,7 +108,7 @@ public class ClientScreen implements Screen {
 
         getStage().addActor(stackLabel);
 
-
+        getStage().addActor(gameOverWindow);
     }
 
     SelectBox<String> getStringSelectBox(Skin skin) {
@@ -134,6 +138,20 @@ public class ClientScreen implements Screen {
         return rankSelectBox;
     }
 
+    Window getGameOverWindow() {
+        Window window = new Window("Game Over", skin);
+        window.setSize(500, 250);
+        window.setPosition(
+            (getStage().getWidth() - window.getWidth()) / 2,
+            (getStage().getHeight() - window.getHeight()) / 2
+        );
+        window.setVisible(false);
+        window.setResizable(false);
+        window.setMovable(false);
+        return window;
+    }
+
+
     public void updateRankSelectBox() {
         Array<String> ranks = new Array<>();
 
@@ -160,6 +178,14 @@ public class ClientScreen implements Screen {
     }
 
     private void canUseButtons() {
+        if(!Objects.equals(winner, "")) {
+            addToStackButton.setDisabled(true);
+            addToStackButton.setTouchable(Touchable.disabled);
+            checkStackButton.setDisabled(true);
+            checkStackButton.setTouchable(Touchable.disabled);
+            rankSelectBox.setDisabled(true);
+            rankSelectBox.setTouchable(Touchable.disabled);
+        }
         if(getController().isMyTurn()) {
 
             addToStackButton.setDisabled(false);
@@ -179,18 +205,36 @@ public class ClientScreen implements Screen {
         }
     }
 
+    public void updateGameOver() {
+        winner = getController().getWhoWon();
+        if(Objects.equals(winner, "")){
+            gameOverWindow.setVisible(false);
+            System.out.println("Game not over");
+            return;
+        }
+        System.out.println("Winner is " + winner);
+        gameOverWindow.clear();
+        gameOverWindow.add(new Label(winner + " won!", skin)).pad(5).row();
+        gameOverWindow.setVisible(true);
+        gameOverWindow.toFront();
+
+    }
+
     //======================CARD ACTORS======================//
 
     public void updateHandCardActors() {
         List<Card> playerHand = getController().getPlayer().getHand();
+        playerHand.removeIf(Objects::isNull); // Usunięcie nulli z ręki
+
         AtomicBoolean changed = new AtomicBoolean(false);
         List<CardActor> removedActors = new ArrayList<>();
 
         handCardActors.removeIf(actor -> {
-            boolean shouldRemove = playerHand.stream().noneMatch(card ->
-                actor.getSuit().equals(card.getSuit()) &&
-                    actor.getRank().equals(card.getRank())
-            );
+            boolean shouldRemove = playerHand.stream().noneMatch(card -> {
+                if (card == null) return false; // Dodano sprawdzenie null
+                return actor.getSuit().equals(card.getSuit()) &&
+                    actor.getRank().equals(card.getRank());
+            });
 
             if (shouldRemove) {
                 removedActors.add(actor);
@@ -202,6 +246,7 @@ public class ClientScreen implements Screen {
 
 
         for (Card card : getController().getPlayer().getHand()) {
+            if (card == null) continue; // Dodano sprawdzenie null
             boolean exists = handCardActors.stream().anyMatch(actor ->
                 actor.getSuit().equals(card.getSuit()) &&
                     actor.getRank().equals(card.getRank())
@@ -220,8 +265,6 @@ public class ClientScreen implements Screen {
             moveCardActorsToStack(removedActors);
             moveCardActorsToHand();
         }
-
-
     }
 
     void moveCardActorsToHand() {
@@ -356,7 +399,6 @@ public class ClientScreen implements Screen {
             int currentCardCount = playerCards.size();
 
             if (newCardCount < currentCardCount) {
-
                 List<CardActor> toRemove = playerCards.subList(newCardCount, currentCardCount);
                 for (CardActor card : toRemove) {
                     card.addAction(Actions.sequence(
@@ -366,10 +408,14 @@ public class ClientScreen implements Screen {
                     removedActors.add(card);
                 }
                 otherPlayersCardActors.removeAll(toRemove);
-
                 changed.set(true);
             } else if (newCardCount > currentCardCount) {
                 int cardsToAdd = newCardCount - currentCardCount;
+                List<CardActor> newCardActors = new ArrayList<>();
+
+                float spacing = 50;
+                float startX = posX - (newCardCount - 1) * spacing / 2;
+
                 for (int j = 0; j < cardsToAdd; j++) {
                     CardActor cardActor;
                     if (!stackCardActors.isEmpty()) {
@@ -378,34 +424,27 @@ public class ClientScreen implements Screen {
                         cardActor = new CardActor();
                     }
                     cardActor.setPlayerName(playerName);
-                    cardActor.toFront();
-                    cardActor.setPosition(getStage().getWidth()/2 - 70, getStage().getHeight()/2 - 100);
-                    getStage().addActor(cardActor);
-                    otherPlayersCardActors.add(cardActor);
 
-                    float targetX = posX + (currentCardCount + j) * 50;
-                    cardActor.addAction(Actions.sequence(
-                        Actions.moveTo(targetX, posY - 50, 0.3f, Interpolation.exp10),
-                        Actions.moveTo(targetX, posY, 0.3f, Interpolation.exp10)
-                    ));
+                    float targetX = startX + (currentCardCount + j) * spacing;
+                    cardActor.setPosition(targetX, posY);
+                    newCardActors.add(cardActor);
+                    otherPlayersCardActors.add(cardActor);
+                }
+
+                for (CardActor cardActor : newCardActors) {
+                    getStage().addActor(cardActor);
+                    cardActor.toFront();
                 }
             }
 
             float spacing = 50;
             float startX = posX - (newCardCount - 1) * spacing / 2;
 
-            for (int j = 0; j < newCardCount; j++) {
-                if (j >= playerCards.size()) break;
-
+            for (int j = 0; j < playerCards.size(); j++) {
                 CardActor cardActor = playerCards.get(j);
                 float targetX = startX + j * spacing;
-
-                cardActor.addAction(Actions.sequence(
-                    Actions.moveTo(targetX, posY - 50, 0.3f, Interpolation.exp10),
-                    Actions.moveTo(targetX, posY, 0.3f, Interpolation.exp10)
-                ));
+                cardActor.addAction(Actions.moveTo(targetX, posY, 0.3f, Interpolation.exp10));
             }
-
 
             i++;
         }
@@ -479,7 +518,7 @@ public class ClientScreen implements Screen {
 
     @Override
     public void hide() {
-
+        stage.clear();
     }
 
     @Override

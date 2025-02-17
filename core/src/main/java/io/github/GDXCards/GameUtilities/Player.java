@@ -18,4 +18,5 @@ public interface Player {
 
     void setHand(List<Card> hand);
 
+    void clearHand();
 }

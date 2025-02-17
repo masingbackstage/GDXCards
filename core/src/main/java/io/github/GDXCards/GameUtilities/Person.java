@@ -60,6 +60,9 @@ public class Person implements Player {
 
     private void sortHand() {
         hand.sort((card1, card2) -> {
+            if (card1 == null || card2 == null) {
+                return 0;
+            }
             int rankComparison = Integer.compare(card1.getRank().ordinal(), card2.getRank().ordinal());
             if (rankComparison == 0) {
                 return Integer.compare(card1.getSuit().ordinal(), card2.getSuit().ordinal());
@@ -67,6 +70,7 @@ public class Person implements Player {
             return rankComparison;
         });
     }
+
 
     @Override
     public int getID() {
@@ -81,5 +85,10 @@ public class Person implements Player {
     public void setHand(List<Card> hand) {
         this.hand.clear();
         this.hand.addAll(hand);
+    }
+
+    @Override
+    public void clearHand() {
+        hand.clear();
     }
 }

@@ -20,12 +20,12 @@ public class ClientServerInstance implements ServerInstance {
     private final Client client;
     private Connection serverConnection;
     private final Kryo kryo;
-    private final ClientScreen clientScreen;
+    private ClientScreen clientScreen;
     private final Main main;
     private final Player playerClient;
     private final ClientController clientController;
 
-    public ClientServerInstance(Main main, String name, String ipAddress) throws IOException {
+    public ClientServerInstance(Main main, String name, String ipAddress) {
         client = new Client();
         kryo = client.getKryo();
         this.main = main;
@@ -33,17 +33,25 @@ public class ClientServerInstance implements ServerInstance {
         playerClient.setName(name);
         clientController = new ClientController(this);
         clientController.setPlayer(playerClient);
-        clientScreen = new ClientScreen(main.getStage(), clientController);
-        main.setScreen(clientScreen);
         registerClasses(kryo);
         addListeners();
-        startClient(ipAddress);
 
-    }
+        try {
+            client.start();
+            client.connect(5000, ipAddress, 54555, 54777);
 
-    public void startClient(String host) throws IOException {
-        client.start();
-        client.connect(5000, host, 54555, 54777);
+            Gdx.app.postRunnable(() -> {
+                clientScreen = new ClientScreen(main.getStage(), clientController);
+                main.setScreen(clientScreen);
+            });
+
+        } catch (IOException e) {
+            System.out.println("Connection error: " + e.getMessage());
+            Gdx.app.postRunnable(() -> {
+                main.setScreen(main.getStartMenuScreen());
+                main.getStartMenuScreen().setErrorMessage("Connection error: " + e.getMessage());
+            });
+        }
     }
 
     public void stop() {
@@ -66,17 +74,19 @@ public class ClientServerInstance implements ServerInstance {
 
             @Override
             public void received(Connection connection, Object object) {
-                if(object instanceof UpdateMessage) {
+                if (object instanceof UpdateMessage) {
                     clientController.getPlayer().setHand(((UpdateMessage) object).getCards());
                     clientController.setStack(((UpdateMessage) object).getStack());
                     clientController.setOtherPlayers(((UpdateMessage) object).getPlayersHandSize());
                     clientController.setMyTurn(((UpdateMessage) object).isMyTurn());
                     clientController.setCurrentRank(((UpdateMessage) object).getRank());
                     clientController.setLastAddedCards(((UpdateMessage) object).getLastAddedCards());
+                    clientController.setWhoWon(((UpdateMessage) object).getWhoWon());
                     Gdx.app.postRunnable(clientScreen::updateHandCardActors);
                     Gdx.app.postRunnable(clientScreen::updateOtherPlayers);
                     Gdx.app.postRunnable(clientScreen::updateStackCardActors);
                     Gdx.app.postRunnable(clientScreen::updateRankSelectBox);
+                    Gdx.app.postRunnable(clientScreen::updateGameOver);
                 }
             }
         });

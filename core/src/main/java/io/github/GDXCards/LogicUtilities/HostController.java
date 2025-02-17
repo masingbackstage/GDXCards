@@ -6,15 +6,14 @@ import io.github.GDXCards.GameUtilities.Player;
 import io.github.GDXCards.GameUtilities.Stack;
 import io.github.GDXCards.Network.HostServerInstance;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HostController implements Controller {
-    private final Deck deck;
-    private final Stack stack;
+    private Deck deck;
+    private Stack stack;
     private List<Player> players;
     private int currentPlayerIndex;
     private boolean isGameStarted;
@@ -23,7 +22,9 @@ public class HostController implements Controller {
 
     private Map<String, Integer> otherPlayers;
 
-    public HostController() throws IOException {
+    private String whoWon;
+
+    public HostController() {
         deck = new Deck();
         stack = new Stack();
         players = new ArrayList<>();
@@ -32,6 +33,7 @@ public class HostController implements Controller {
         hostServerInstance = new HostServerInstance();
         otherPlayers = new HashMap<>();
         lastAddedCards = 0;
+        whoWon = "";
     }
 
     public HostController(HostServerInstance hostServerInstance) {
@@ -43,12 +45,12 @@ public class HostController implements Controller {
         isGameStarted = false;
         otherPlayers = new HashMap<>();
         lastAddedCards = 0;
+        whoWon = "";
     }
 
     public void addPlayer(Player player) {
         players.add(player);
     }
-
 
     public void startGame() {
         System.out.println("Starting game");
@@ -60,6 +62,7 @@ public class HostController implements Controller {
 
     public void dealCards() {
         for (Player player : players) {
+            player.clearHand();
             player.addCards(deck.getFromDeck(52/players.size()));
         }
     }
@@ -76,6 +79,17 @@ public class HostController implements Controller {
         return stack;
     }
 
+    public void addToStack(List <Card> cards, Card.Rank rank) {
+        lastAddedCards = cards.size();
+        System.out.println(players.get(currentPlayerIndex).getName() + " adds to stack!");
+        players.get(currentPlayerIndex).removeCards(cards);
+        System.out.println("Current rank is [Controller]: " + rank);
+        stack.addToStack(cards, players.get(currentPlayerIndex), rank);
+        System.out.println(players.get(currentPlayerIndex).getName() + " now has " + players.get(currentPlayerIndex).getHand().size() + " cards!");
+        checkWinCondition();
+        nextPlayer();
+    }
+
     public void checkStack() {
         if (stack.isValid()) {
             players.get(currentPlayerIndex).addCards(stack.getCardsFromStack());
@@ -85,16 +99,7 @@ public class HostController implements Controller {
             players.get(previousPlayerIndex).addCards(stack.getCardsFromStack());
             stack.clearStack();
         }
-        nextPlayer();
-    }
-
-    public void addToStack(List <Card> cards, Card.Rank rank) {
-        lastAddedCards = cards.size();
-        System.out.println(players.get(currentPlayerIndex).getName() + " adds to stack!");
-        players.get(currentPlayerIndex).removeCards(cards);
-        System.out.println("Current rank is [Controller]: " + rank);
-        stack.addToStack(cards, players.get(currentPlayerIndex), rank);
-        System.out.println(players.get(currentPlayerIndex).getName() + " now has " + players.get(currentPlayerIndex).getHand().size() + " cards!");
+        checkWinCondition();
         nextPlayer();
     }
 
@@ -165,4 +170,37 @@ public class HostController implements Controller {
     public int getLastAddedCards() {
         return lastAddedCards;
     }
+
+    @Override
+    public String getWhoWon() {
+        return whoWon;
+    }
+
+    public void checkWinCondition() {
+        if(!isGameStarted) return;
+        for(Player player : players) {
+            if (player.getHand().isEmpty()) {
+                System.out.println(player.getName() + " has no cards!");
+                isGameStarted = false;
+                whoWon = player.getName();
+                return;
+            }
+        }
+        whoWon = "";
+    }
+
+    @Override
+    public void resetGame() {
+        deck = new Deck();
+        stack = new Stack();
+        for (Player player : players) {
+            player.clearHand();
+        }
+        currentPlayerIndex = 0;
+        isGameStarted = true;
+        whoWon = "";
+        dealCards();
+        sendGameUpdate();
+    }
+
 }
